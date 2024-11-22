@@ -1,0 +1,260 @@
+#!/bin/bash
+# MuSha.txt
+
+
+echo "running script ${BASH_SOURCE}";
+echo "";
+
+###############################################################################
+start_dir=`pwd -P`;
+script_dir=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P );
+root_dir=$( cd "$(dirname "${script_dir}")" ; pwd -P );
+
+dataset_dir="${root_dir}/dataset/";
+target="release";
+program="./${target}.exe";
+
+cd "${root_dir}";
+
+if [ ! -d dataset ] || [ ! -f release.exe ]; then
+    echo "wrong root path: ${root_dir}";
+    exit -1;
+fi
+
+make ${target};
+echo "";
+
+###############################################################################
+# define dataset
+
+# unlabeled dataset format
+# from-vertex to-vertex
+
+# undirected unlabeled dataset
+ud_ul_ds="unlabeled-grqc";
+ud_ul_ds="${ud_ul_ds} unlabeled-email";
+ud_ul_ds="${ud_ul_ds} unlabeled-gowa";
+ud_ul_ds="${ud_ul_ds} unlabeled-roadca";
+
+# unlabeled directed dataset
+d_ul_ds="unlabeled-facebook";
+d_ul_ds="${d_ul_ds} unlabeled-p2p";
+d_ul_ds="${d_ul_ds} unlabeled-NotreDame";
+d_ul_ds="${d_ul_ds} unlabeled-amazon";
+d_ul_ds="${d_ul_ds} unlabeled-comlj";
+
+# labeled dataset format
+# from-vertex to-vertex from_label to_label edge_label
+
+# undirected labeled dataset
+ud_l_ds="labeled-wordnet-rapidmatch";
+ud_l_ds="${ud_l_ds} labeled-patents-rapidmatch";
+
+# directed labeled dataset
+d_l_ds="labeled-patent-subcategory";
+
+###############################################################################
+# unlabeled datasets
+
+function run_query_undirected() {
+    local filename=$1;
+    local has_direction=$2;
+    local has_label=0;
+    local query_dir="${dataset_dir}/unlabeled-query${suffix}/";
+    # check path
+    local datafile="${dataset_dir}/${filename}${suffix}.txt";
+    if [ ! -f ${datafile} ]; then
+        echo "skip. run_query_undirected data not found: ${datafile}";
+        return -1;
+    fi
+    if [ ! -d ${query_dir} ]; then
+        echo "skip. run_query_undirected query_dir not found: ${query_dir}";
+        return -2;
+    fi
+    # pass all check
+    local argument="-is-labeled ${has_label} -data-file ${datafile}";
+    local cpp="${program} ${argument} -query-file";
+    # should be 29 queries, as listed in graphlet.txt
+    ${cpp} "${query_dir}/u-3-triangle-collision.txt" "-query-name" "3-triangle-collision";
+    echo "";
+    ${cpp} "${query_dir}/u-3-wedge-collision.txt" "-query-name" "3-wedge-collision";
+    echo "";
+    ${cpp} "${query_dir}/u-4-4.txt" "-query-name" "tailed-triangle";
+    echo "";
+    ${cpp} "${query_dir}/u-4-5.txt" "-query-name" "diamond";
+    echo "";
+    ${cpp} "${query_dir}/u-almost-clique-5.txt" "-query-name" "almost-5-clique";
+    echo "";
+    ${cpp} "${query_dir}/u-clique-3.txt" "-query-name" "triangle";
+    echo "";
+    ${cpp} "${query_dir}/u-clique-4.txt" "-query-name" "4-clique";  # G8
+    echo "";
+    ${cpp} "${query_dir}/u-clique-5.txt" "-query-name" "5-clique";
+    echo "";
+    ${cpp} "${query_dir}/u-cobra.txt" "-query-name" "cobra";
+    echo "";
+    ${cpp} "${query_dir}/u-cycle-4.txt" "-query-name" "4-cycle";
+    echo "";
+    ${cpp} "${query_dir}/u-cycle-5.txt" "-query-name" "5-cycle";
+    echo "";
+    ${cpp} "${query_dir}/u-diamond-wedge-collision.txt" "-query-name" "diamond-wedge-collision";
+    echo "";
+    ${cpp} "${query_dir}/u-double-tailed-triangle.txt" "-query-name" "double-tailed-triangle";
+    echo "";
+    ${cpp} "${query_dir}/u-forktailed-triangle.txt" "-query-name" "forktailed-triangle";
+    echo "";
+    ${cpp} "${query_dir}/u-hatted-4-clique.txt" "-query-name" "hatted-4-clique";
+    echo "";
+    ${cpp} "${query_dir}/u-hatted-4-cycle.txt" "-query-name" "hatted-4-cycle";
+    echo "";
+    ${cpp} "${query_dir}/u-hourglass.txt" "-query-name" "hourglass";
+    echo "";
+    ${cpp} "${query_dir}/u-long-tailed-triangle.txt" "-query-name" "long-tailed-triangle";
+    echo "";
+    ${cpp} "${query_dir}/u-path-3.txt" "-query-name" "2-path";      # G1
+    echo "";
+    ${cpp} "${query_dir}/u-path-4.txt" "-query-name" "3-path";      # G3
+    echo "";
+    ${cpp} "${query_dir}/u-path-5.txt" "-query-name" "4-path";
+    echo "";
+    ${cpp} "${query_dir}/u-prong.txt" "-query-name" "prong";
+    echo "";
+    ${cpp} "${query_dir}/u-star-4.txt" "-query-name" "3-star";
+    echo "";
+    ${cpp} "${query_dir}/u-star-5.txt" "-query-name" "4-star";
+    echo "";
+    ${cpp} "${query_dir}/u-stingray.txt" "-query-name" "stingray";
+    echo "";
+    ${cpp} "${query_dir}/u-tailed-4-clique.txt" "-query-name" "tailed-4-clique";
+    echo "";
+    ${cpp} "${query_dir}/u-tailed-4-cycle.txt" "-query-name" "tailed-4-cycle";
+    echo "";
+    ${cpp} "${query_dir}/u-triangle-strip.txt" "-query-name" "triangle-strip";
+    echo "";
+    ${cpp} "${query_dir}/u-wheel-4.txt" "-query-name" "4-wheel";
+    echo "";
+}
+
+
+for name in ${ud_ul_ds}
+do
+    has_direction=0;
+    run_query_undirected ${name} ${has_direction};
+done
+
+
+function run_query_directed() {
+    local filename=$1;
+    local has_direction=$2;
+    local has_label=0;
+    local suffix="-single-directed";
+    local query_dir="${dataset_dir}/unlabeled-query${suffix}/";
+    # check path
+    local datafile="${dataset_dir}/${filename}${suffix}.txt";
+    if [ ! -f ${datafile} ]; then
+        echo "skip. run_directory_query data not found: ${datafile}";
+        return -1;
+    fi
+    if [ ! -d ${query_dir} ]; then
+        echo "skip. run_directory_query query_dir not found: ${query_dir}";
+        return -2;
+    fi
+    # pass all check
+    local argument="-is-labeled ${has_label} -data-file ${datafile}";
+    argument="${argument} -algorithm SingleDirectedCSR";
+    local cpp="${program} ${argument} -query-file";
+    ${cpp} "${query_dir}/d-bifan.txt" -query-name "d-bifan";
+    echo "";
+    ${cpp} "${query_dir}/d-clique-3.txt" -query-name "d-clique-3";
+    echo "";
+    ${cpp} "${query_dir}/d-clique-4.txt" -query-name "d-clique-4";
+    echo "";
+    ${cpp} "${query_dir}/d-clique-5.txt" -query-name "d-clique-5";
+    echo "";
+    ${cpp} "${query_dir}/d-cycle-3.txt" -query-name "d-cycle-3";
+    echo "";
+    ${cpp} "${query_dir}/d-cycle-4.txt" -query-name "d-cycle-4";
+    echo "";
+    ${cpp} "${query_dir}/d-cycle-5.txt" -query-name "d-cycle-5";
+    echo "";
+    ${cpp} "${query_dir}/d-feed-forward.txt" -query-name "d-feed-forward";
+    echo "";
+    ${cpp} "${query_dir}/d-path-3.txt" -query-name "d-path-3";
+    echo "";
+    ${cpp} "${query_dir}/d-path-4.txt" -query-name "d-path-4";
+    echo "";
+    ${cpp} "${query_dir}/d-path-5.txt" -query-name "d-path-5";
+    echo "";
+    ${cpp} "${query_dir}/d-sink-3.txt" -query-name "d-sink-3";
+    echo "";
+    ${cpp} "${query_dir}/d-sink-4.txt" -query-name "d-sink-4";
+    echo "";
+    ${cpp} "${query_dir}/d-sink-5.txt" -query-name "d-sink-5";
+    echo "";
+    ${cpp} "${query_dir}/d-star-3.txt" -query-name "d-star-3";
+    echo "";
+    ${cpp} "${query_dir}/d-star-4.txt" -query-name "d-star-4";
+    echo "";
+    ${cpp} "${query_dir}/d-star-5.txt" -query-name "d-star-5";
+    echo "";
+}
+
+for name in ${d_ul_ds}
+do
+    has_direction=1;
+    run_query_directed ${name} ${has_direction};
+done
+
+
+###############################################################################
+# labeled query are sampled
+echo "run sampled query";
+
+function run_sample_query() {
+    local filename=$1;
+    local has_label=$2;
+    local suffix=$3;
+    local datafile="${dataset_dir}/${filename}${suffix}.txt";
+    if [ ! -f ${datafile} ]; then
+        echo "skip. run_sample_query data not found: ${datafile}";
+        return -1;
+    fi
+    # note the placement of $suffix in query_dir
+    local query_dir="${dataset_dir}/${filename}${suffix}-sample-query/";
+    if [ ! -d ${query_dir} ]; then
+        echo "skip. run_sample_query query_dir not found: ${query_dir}";
+        return -2;
+    fi
+    local argument="-is-labeled ${has_label} -data-file ${datafile}";
+    command="${program} -algorithm TopDown";
+    command="${command} -execute dynamic";
+    command="${command} -graph-storage SortTrie";
+    command="${command} -order-generator NonAutomorphism";
+    command="${command} -symmetry-breaking SymBreak2007";
+    # inclusive on both ends
+    for index in {0..100}
+    do
+        for size in {3..7}
+        do
+            local query_file="${query_dir}/${size}-${index}.txt";
+            if [ -f ${query_file} ]; then
+                ${command} ${argument} -query-file ${query_file};
+                echo "";
+            fi
+        done
+    done
+}
+
+
+for name in ${ud_l_ds}
+do
+    has_label=1;
+    run_sample_query ${name} ${has_label};
+done
+
+
+for name in ${d_l_ds}
+do
+    has_label=1;
+    run_sample_query ${name} ${has_label} "-single-directed";
+done
